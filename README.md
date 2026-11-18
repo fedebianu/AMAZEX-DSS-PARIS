@@ -1,3 +1,33 @@
+# A-MAZE-X Paris CTF Solutions
+
+🏅 **Honorable mention** in the A-MAZE-X Paris results announced by Secureum (July 2023): [post](https://x.com/TheSecureum/status/1685169742292934656)
+
+🐞 **Found a bug in the CTF itself:** challenge 4 assumed that a CREATE2 address depends on `msg.sender`, while it depends on the contract executing the CREATE2, so it was removed from the CTF: [post](https://x.com/patrickd_de/status/1682513659258368002) · [write-up](https://ventral.digital/posts/2023/7/16/secureum-a-maze-x-ctf-2023-at-defi-security-summit/)
+
+My solutions to Secureum's A-MAZE-X CTF at the DeFi Security Summit in Paris (July 2023), all 8 challenges.
+Each solution is in the challenge's test, `test/ChallengeX.t.sol`; for challenge 3 the exploit is also in [`LendingHack.sol`](src/3_LendingPool/LendingHack.sol).
+
+| # | Challenge | Bug | Solution |
+|---|---|---|---|
+| 1 | Operation magic redemption | `burnFrom` reads the allowance with owner and spender swapped: approve the victim, burn 0 from it, and you get its allowance | [test](test/Challenge1.t.sol) |
+| 2 | Mission Modern WETH | `withdrawAll` sends the ETH before burning: on receive, move the mWETH to a second contract, which withdraws again (`nonReentrant` doesn't cover `transfer`) | [test](test/Challenge2.t.sol) |
+| 3 | LendEx pool hack | Metamorphic contracts: self-destruct the CREATE deployer and the pool, redeploy the deployer with CREATE2, and its reset nonce puts the hack contract at the pool's address | [test](test/Challenge3.t.sol) · [hack](src/3_LendingPool/LendingHack.sol) |
+| 4 | Operation Rescue POSI Token | The stuck address is a vault the same factory deploys with CREATE2: redeploy it with salt 11 (the November birthday) and take ownership | [test](test/Challenge4.t.sol) |
+| 5 | Balloon Vault | WETH has no `permit` but has a fallback, so `depositWithPermit` pulls any approved user's WETH; once a donation inflates the share price, their deposits round to 0 shares | [test](test/Challenge5.t.sol) |
+| 6 | Safe Yield? | The ETH flash loan only checks the pool's balance: swapping the borrowed ETH into tokens through the pool itself repays it | [test](test/Challenge6.t.sol) |
+| 7 | Crystal DAO | `initialize` writes the owner to the wrong storage slot, so `owner` is 0, which is what `ecrecover` returns for an invalid signature | [test](test/Challenge7.t.sol) |
+| 8 | Liquidatoooor | The health factor uses the AMM spot price: dump the token to push the target underwater, then liquidate it, repaying 5% of its debt for all its collateral | [test](test/Challenge8.t.sol) |
+
+```bash
+forge test
+```
+
+With today's Foundry the challenge 4 test fails: the vault's CREATE2 address depends on the template's bytecode, whose metadata hash changes with the toolchain, so the redeployed vault no longer lands on the hardcoded address. The challenge authors changed that address twice for the same reason.
+
+---
+
+*The original README of the challenge follows.*
+
 # **Secureum A-MAZE-X Maison de la Chimie, DeFi Security Summit**
 
 ## **A Smart Contract Security _Capture the Flag_ Workshop**
